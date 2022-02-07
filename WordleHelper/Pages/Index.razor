@@ -1,0 +1,148 @@
+﻿@page "/"
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+@inject HttpClient Http
+
+<PageTitle>Index</PageTitle>
+
+<EditForm Model="@model" OnValidSubmit="GetSolutions">
+    <DataAnnotationsValidator />
+    <MudGrid>
+        <MudItem xs="12" sm="7">
+            <MudCard Class="mb-4">
+                <MudCardContent>
+                    <MudTextField Label="Skeleton" HelperText="Input letters you know with unknowns being '_'. (__zzy)"
+                                  @bind-Value="model.Skeleton" For="@(() => model.Skeleton)" MaxLength=5 />
+
+                    <MudTextField Label="Blocked Letters" HelperText="Letters you know the answer does not contain. (efg)"
+                                  @bind-Value="model.BlockedLetters" For="@(() => model.BlockedLetters)" />
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Get Solutions</MudButton>
+                </MudCardActions>
+            </MudCard>
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.subtitle1">Examples</MudText>
+                <MudText>Here is sample inputs and what words they might produce.</MudText>
+                <MudText>Skeleton input: "__zzy"</MudText>
+                <MudText>Blocked Words input: "j"</MudText>
+                <MudText>Would Produce: "fizzy"</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="5">
+            <MudPaper Class="pa-4 mud-height-full">
+                <MudText Typo="Typo.subtitle1">Solutions:</MudText>
+                @if (success)
+                {
+                    @foreach (var solution in Solutions)
+                    {
+                        if (masked)
+                        {
+                            <MudText>*****</MudText>
+                        }
+                        else
+                        {
+                            <MudText>@solution</MudText>
+                        }
+                    }
+                }
+                else
+                {
+                    <MudText Color="@Color.Error">
+                        <ValidationSummary />
+                    </MudText>
+                }
+                <MudCardActions>
+                    @if (displayMaskButton)
+                    {
+                        <MudText Color="@Color.Error">Solutions with Less Than 10 Answers at Automatically Masked.</MudText>
+                        <MudButton OnClick="ToggleMasked" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">@maskButtonText</MudButton>
+                    }
+                </MudCardActions>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</EditForm>
+
+@code {
+    private WordleHelperInput model = new WordleHelperInput();
+    private bool success;
+    private IEnumerable<string> Solutions { get; set; } = new List<string>();
+    private string words = "";
+
+    private bool masked = false;
+    private string maskButtonText = "Hide Masked Solutions";
+    private bool displayMaskButton = false;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await Http.GetFromJsonAsync<DictionaryData>("dictionaries/wordle.json");
+        if (response is not null)
+        {
+            words = string.Join(",", response.Words);
+        }
+    }
+
+
+    void ToggleMasked()
+    {
+        if (masked)
+        {
+            masked = false;
+            maskButtonText = "Hide Masked Solutions";
+        }
+        else
+        {
+            masked = true;
+            maskButtonText = "Show Masked Solutions";
+        }
+        StateHasChanged();
+
+    }
+
+    void GetSolutions()
+    {
+        success = true;
+
+        var blockedRegex = model.BlockedLetters.Length > 0 ? $"[^{model.BlockedLetters}]" : ".";
+
+        var regexBuilder = @"\b";
+        foreach (var letter in model.Skeleton)
+        {
+            if (letter == '_')
+                regexBuilder += blockedRegex;
+            else
+                regexBuilder += (letter.ToString());
+        }
+        regexBuilder += @"\b";
+
+        Regex regex = new Regex(regexBuilder, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        var matches = regex.Matches(words);
+        Solutions = matches.Select(m => m.Value);
+
+        displayMaskButton = false;
+        masked = false;
+        if (matches.Count <= 10)
+        {
+            masked = true;
+            displayMaskButton = true;
+        }
+
+        StateHasChanged();
+    }
+
+    public class WordleHelperInput
+    {
+        [Required]
+        [StringLength(maximumLength: 5, MinimumLength = 5, ErrorMessage = "Skeleton Must Be 5 Characters")]
+        public string Skeleton { get; set; } = "";
+
+        public string BlockedLetters { get; set; } = "";
+    }
+
+    public class DictionaryData
+    {
+        public List<string> Words { get; set; } = new List<string>();
+    }
+}
