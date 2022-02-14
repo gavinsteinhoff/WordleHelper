@@ -1,14 +1,12 @@
 ﻿@page "/"
-@using System.Text.RegularExpressions
-@using System.ComponentModel.DataAnnotations
-@inject HttpClient Http
+@inject IWordleHelperLogic _wordleHelperLogic
 
 <PageTitle>Wordle Helper</PageTitle>
 
 <EditForm Model="@model" OnValidSubmit="GetSolutions">
     <DataAnnotationsValidator />
     <MudGrid>
-        <MudItem xs="12" sm="7">            
+        <MudItem xs="12" sm="7">
             <MudPaper Class="pa-4">
                 <MudText>Do you want to play Wordle, but you are not a human dictionary?</MudText>
                 <MudText>This is the for you! Wordle Helper will help you find words, but not the one solution.</MudText>
@@ -20,6 +18,9 @@
 
                     <MudTextField Label="Blocked Letters" HelperText="Letters you know the answer does not contain. (efg)"
                                   @bind-Value="model.BlockedLetters" For="@(() => model.BlockedLetters)" />
+
+                    <MudTextField Label="Confirmed Letters" HelperText="Letters you know the answer must contain. (efg)"
+                                  @bind-Value="model.ConfirmedLetters" For="@(() => model.BlockedLetters)" />
                 </MudCardContent>
                 <MudCardActions>
                     <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Get Solutions</MudButton>
@@ -35,7 +36,7 @@
         </MudItem>
         <MudItem xs="12" sm="5">
             <MudPaper Class="pa-4 mud-height-full">
-                <MudText Typo="Typo.subtitle1">Solutions:</MudText>
+                <MudText Typo="Typo.subtitle1">Solutions: (@Solutions.Count())</MudText>
                 @if (success)
                 {
                     @foreach (var solution in Solutions)
@@ -49,6 +50,18 @@
                             <MudText>@solution</MudText>
                         }
                     }
+
+                    <MudCardActions>
+                        @if (Solutions.Count() == 0)
+                        {
+                            <MudText Color="@Color.Error">No Solution Could Be Found.</MudText>
+                        }
+                        else if (displayMaskButton)
+                        {
+                            <MudText Color="@Color.Error">Solutions with Less Than 10 Answers at Automatically Masked.</MudText>
+                            <MudButton OnClick="ToggleMasked" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">@maskButtonText</MudButton>
+                        }
+                    </MudCardActions>
                 }
                 else
                 {
@@ -56,13 +69,6 @@
                         <ValidationSummary />
                     </MudText>
                 }
-                <MudCardActions>
-                    @if (displayMaskButton)
-                    {
-                        <MudText Color="@Color.Error">Solutions with Less Than 10 Answers at Automatically Masked.</MudText>
-                        <MudButton OnClick="ToggleMasked" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">@maskButtonText</MudButton>
-                    }
-                </MudCardActions>
             </MudPaper>
         </MudItem>
     </MudGrid>
@@ -72,22 +78,14 @@
     private WordleHelperInput model = new WordleHelperInput();
     private bool success;
     private IEnumerable<string> Solutions { get; set; } = new List<string>();
-    private string words = "";
-
     private bool masked = false;
     private string maskButtonText = "Hide Masked Solutions";
     private bool displayMaskButton = false;
 
-
     protected override async Task OnInitializedAsync()
     {
-        var response = await Http.GetFromJsonAsync<DictionaryData>("dictionaries/wordle.json");
-        if (response is not null)
-        {
-            words = string.Join(",", response.Words);
-        }
+        await _wordleHelperLogic.GetWords();
     }
-
 
     void ToggleMasked()
     {
@@ -102,51 +100,19 @@
             maskButtonText = "Show Masked Solutions";
         }
         StateHasChanged();
-
     }
 
     void GetSolutions()
     {
         success = true;
-
-        var blockedRegex = model.BlockedLetters.Length > 0 ? $"[^{model.BlockedLetters}]" : ".";
-
-        var regexBuilder = @"\b";
-        foreach (var letter in model.Skeleton)
-        {
-            if (letter == '_')
-                regexBuilder += blockedRegex;
-            else
-                regexBuilder += (letter.ToString());
-        }
-        regexBuilder += @"\b";
-
-        Regex regex = new Regex(regexBuilder, RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        var matches = regex.Matches(words);
-        Solutions = matches.Select(m => m.Value);
-
+        Solutions = _wordleHelperLogic.GetSolutions(model);
         displayMaskButton = false;
         masked = false;
-        if (matches.Count <= 10)
+        if (Solutions.Count() <= 10)
         {
             masked = true;
             displayMaskButton = true;
         }
-
         StateHasChanged();
-    }
-
-    public class WordleHelperInput
-    {
-        [Required]
-        [StringLength(maximumLength: 5, MinimumLength = 5, ErrorMessage = "Skeleton Must Be 5 Characters")]
-        public string Skeleton { get; set; } = "";
-
-        public string BlockedLetters { get; set; } = "";
-    }
-
-    public class DictionaryData
-    {
-        public List<string> Words { get; set; } = new List<string>();
     }
 }
