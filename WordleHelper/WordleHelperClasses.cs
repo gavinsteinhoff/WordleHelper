@@ -11,7 +11,8 @@ namespace WordleHelper
         [Required]
         [StringLength(maximumLength: 5, MinimumLength = 5, ErrorMessage = "Skeleton Must Be 5 Characters")]
         public string Skeleton { get; set; } = "";
+        public string WrongPositionSkeleton { get; set; } = "";
+        public string KnownLetters { get; set; } = "";
         public string BlockedLetters { get; set; } = "";
-        public string ConfirmedLetters { get; set; } = "";
     }
 }

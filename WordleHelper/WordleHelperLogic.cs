@@ -32,14 +32,22 @@ public class WordleHelperLogic : IWordleHelperLogic
 
     public IEnumerable<string> GetSolutions(WordleHelperInput model)
     {
-        var blockedRegex = model.BlockedLetters.Length > 0 ? $"[^{model.BlockedLetters}]" : ".";
+        var wrongPostions = string.IsNullOrEmpty(model.WrongPositionSkeleton) ? "-----" : model.WrongPositionSkeleton;
+
+        var blockedRegex = model.BlockedLetters.Length > 0 ? $"[^{model.BlockedLetters}]" : "[^~]";
         var regexBuilder = @"\b";
-        foreach (var letter in model.Skeleton)
+
+        foreach (var item in model.Skeleton.Select((letter, index) => (letter, index)))
         {
-            if (letter == '_')
-                regexBuilder += blockedRegex;
+            if (item.letter == '-')
+            {
+                var totalRegex = blockedRegex;
+                if (wrongPostions[item.index] != '-')
+                    totalRegex = totalRegex.Insert(2, wrongPostions[item.index].ToString());
+                regexBuilder += totalRegex;
+            }
             else
-                regexBuilder += (letter.ToString());
+                regexBuilder += (item.letter.ToString());
         }
         regexBuilder += @"\b";
 
@@ -47,13 +55,13 @@ public class WordleHelperLogic : IWordleHelperLogic
         var potentialMatches = regex.Matches(_words).Select(m => m.Value).ToList();
         var matches = potentialMatches;
 
-        if (!string.IsNullOrEmpty(model.ConfirmedLetters))
+        if (!string.IsNullOrEmpty(model.KnownLetters))
         {
             matches = new List<string>();
             potentialMatches.ForEach(match =>
             {
                 var passed = true;
-                model.ConfirmedLetters.ToCharArray().ToList().ForEach(letter =>
+                model.KnownLetters.ToCharArray().ToList().ForEach(letter =>
                 {
                     if (!match.Contains(letter)) passed = false;
                 });

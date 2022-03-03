@@ -11,27 +11,21 @@
                 <MudText>Do you want to play Wordle, but you are not a human dictionary?</MudText>
                 <MudText>This is the for you! Wordle Helper will help you find words, but not the one solution.</MudText>
             </MudPaper>
-            <MudCard Class="my-4">
-                <MudCardContent>
-                    <MudTextField Label="Skeleton" HelperText="Input letters you know with unknowns being '_'. (__zzy)"
-                                  @bind-Value="model.Skeleton" For="@(() => model.Skeleton)" MaxLength=5 />
-
-                    <MudTextField Label="Blocked Letters" HelperText="Letters you know the answer does not contain. (efg)"
-                                  @bind-Value="model.BlockedLetters" For="@(() => model.BlockedLetters)" />
-
-                    <MudTextField Label="Confirmed Letters" HelperText="Letters you know the answer must contain. (efg)"
-                                  @bind-Value="model.ConfirmedLetters" For="@(() => model.BlockedLetters)" />
-                </MudCardContent>
-                <MudCardActions>
-                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Get Solutions</MudButton>
-                </MudCardActions>
-            </MudCard>
+            <MudPaper Class="pa-4 my-2">
+                <MudTextField Label="Skeleton" HelperText="Input known letters with unknowns being '-'." @bind-Value="model.Skeleton" For="@(() => model.Skeleton)" MaxLength=5 />
+                <MudTextField Label="Wrong Position Skeleton" HelperText="Input known letters but in their wrong positions. Include unknowns and known letters as '-'." @bind-Value="model.WrongPositionSkeleton" For="@(() => model.WrongPositionSkeleton)" MaxLength=5 />
+                <MudTextField Label="Other Known Letters" HelperText="Input a list of any more known letters not in the Wrong Position Skeleton." @bind-Value="model.KnownLetters" For="@(() => model.KnownLetters)" />
+                <MudTextField Label="Blocked Letters" HelperText="Input a list of letters you know the answer does not contain." @bind-Value="model.BlockedLetters" For="@(() => model.BlockedLetters)" />
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Get Solutions</MudButton>
+            </MudPaper>
             <MudPaper Class="pa-4">
                 <MudText Typo="Typo.subtitle1">Examples</MudText>
                 <MudText>Here is sample inputs and what words they might produce.</MudText>
-                <MudText>Skeleton input: "__zzy"</MudText>
-                <MudText>Blocked Words input: "j"</MudText>
-                <MudText>Would Produce: "fizzy"</MudText>
+                <MudText>Skeleton input: "sp---"</MudText>
+                <MudText>Wrong Position Skeleton input: "--k--"</MudText>
+                <MudText>Known Words input: "r"</MudText>
+                <MudText>Blocked Words input: "i"</MudText>
+                <MudText>Would Produce: "spark"</MudText>
             </MudPaper>
         </MudItem>
         <MudItem xs="12" sm="5">
