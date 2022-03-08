@@ -37,13 +37,18 @@ public class WordleHelperLogic : IWordleHelperLogic
         var blockedRegex = model.BlockedLetters.Length > 0 ? $"[^{model.BlockedLetters}]" : "[^~]";
         var regexBuilder = @"\b";
 
+        var foundLetters = model.KnownLetters;
+
         foreach (var item in model.Skeleton.Select((letter, index) => (letter, index)))
         {
             if (item.letter == '-')
             {
                 var totalRegex = blockedRegex;
                 if (wrongPostions[item.index] != '-')
+                {
+                    foundLetters += wrongPostions[item.index];
                     totalRegex = totalRegex.Insert(2, wrongPostions[item.index].ToString());
+                }
                 regexBuilder += totalRegex;
             }
             else
@@ -61,7 +66,7 @@ public class WordleHelperLogic : IWordleHelperLogic
             potentialMatches.ForEach(match =>
             {
                 var passed = true;
-                model.KnownLetters.ToCharArray().ToList().ForEach(letter =>
+                foundLetters.ToCharArray().ToList().ForEach(letter =>
                 {
                     if (!match.Contains(letter)) passed = false;
                 });
