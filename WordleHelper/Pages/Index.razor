@@ -3,7 +3,7 @@
 
 <PageTitle>Wordle Helper</PageTitle>
 
-<EditForm Model="@model" OnValidSubmit="GetSolutions">
+<EditForm Model="@_model" OnValidSubmit="GetSolutions">
     <DataAnnotationsValidator />
     <MudGrid>
         <MudItem xs="12" sm="7">
@@ -12,10 +12,10 @@
                 <MudText>This is the for you! Wordle Helper will help you find words, but not the one solution.</MudText>
             </MudPaper>
             <MudPaper Class="pa-4 my-2">
-                <MudTextField Label="Skeleton" HelperText="Input known letters with unknowns being '-'." @bind-Value="model.Skeleton" For="@(() => model.Skeleton)" MaxLength=5 />
-                <MudTextField Label="Wrong Position Skeleton" HelperText="Input known letters but in their wrong positions. Include unknowns and known letters as '-'." @bind-Value="model.WrongPositionSkeleton" For="@(() => model.WrongPositionSkeleton)" MaxLength=5 />
-                <MudTextField Label="Other Known Letters" HelperText="Input a list of any more known letters not in the Wrong Position Skeleton." @bind-Value="model.KnownLetters" For="@(() => model.KnownLetters)" />
-                <MudTextField Label="Blocked Letters" HelperText="Input a list of letters you know the answer does not contain." @bind-Value="model.BlockedLetters" For="@(() => model.BlockedLetters)" />
+                <MudTextField Label="Skeleton" HelperText="Input known letters with unknowns being '-'." @bind-Value="_model.Skeleton" For="@(() => _model.Skeleton)" MaxLength=5 />
+                <MudTextField Label="Wrong Position Skeleton" HelperText="Input known letters but in their wrong positions. Include unknowns and known letters as '-'." @bind-Value="_model.WrongPositionSkeleton" For="@(() => _model.WrongPositionSkeleton)" MaxLength=5 />
+                <MudTextField Label="Other Known Letters" HelperText="Input a list of any more known letters not in the Wrong Position Skeleton." @bind-Value="_model.KnownLetters" For="@(() => _model.KnownLetters)" />
+                <MudTextField Label="Blocked Letters" HelperText="Input a list of letters you know the answer does not contain." @bind-Value="_model.BlockedLetters" For="@(() => _model.BlockedLetters)" />
                 <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Get Solutions</MudButton>
             </MudPaper>
             <MudPaper Class="pa-4">
@@ -30,27 +30,18 @@
         </MudItem>
         <MudItem xs="12" sm="5">
             <MudPaper Class="pa-4 mud-height-full">
-                <MudText Typo="Typo.subtitle1">Solutions: (@Solutions.Count())</MudText>
+                <MudText Typo="Typo.subtitle1">Solutions: (@(_solution.Count == 30 ? "30+" : _solution.Count))</MudText>
                 @if (success)
                 {
-                    @foreach (var solution in Solutions)
-                    {
-                        if (masked)
-                        {
-                            <MudText>*****</MudText>
-                        }
-                        else
-                        {
-                            <MudText>@solution</MudText>
-                        }
-                    }
-
+                    <MudText>
+                        @((MarkupString)DisplaySolution())
+                    </MudText>
                     <MudCardActions>
-                        @if (Solutions.Count() == 0)
+                        @if (_solution.Count == 0)
                         {
                             <MudText Color="@Color.Error">No Solution Could Be Found.</MudText>
                         }
-                        else if (displayMaskButton)
+                        else if (_solution.Count <= 10)
                         {
                             <MudText Color="@Color.Error">Solutions with Less Than 10 Answers at Automatically Masked.</MudText>
                             <MudButton OnClick="ToggleMasked" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">@maskButtonText</MudButton>
@@ -69,17 +60,19 @@
 </EditForm>
 
 @code {
-    private WordleHelperInput model = new WordleHelperInput();
+    private WordleHelperInput _model = new WordleHelperInput();
+    private WordleSolution _solution = new WordleSolution();
+
     private bool success;
-    private IEnumerable<string> Solutions { get; set; } = new List<string>();
     private bool masked = false;
     private string maskButtonText = "Hide Masked Solutions";
-    private bool displayMaskButton = false;
 
     protected override async Task OnInitializedAsync()
     {
         await _wordleHelperLogic.GetWords();
     }
+
+    string DisplaySolution() => masked ? "*****" : _solution.Solution;
 
     void ToggleMasked()
     {
@@ -99,13 +92,11 @@
     void GetSolutions()
     {
         success = true;
-        Solutions = _wordleHelperLogic.GetSolutions(model);
-        displayMaskButton = false;
+        _solution = _wordleHelperLogic.GetSolutions(_model);
         masked = false;
-        if (Solutions.Count() <= 10)
+        if (_solution.Count <= 10)
         {
             masked = true;
-            displayMaskButton = true;
         }
         StateHasChanged();
     }
