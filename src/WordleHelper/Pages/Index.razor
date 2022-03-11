@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using WordleHelper.Core
 @inject IWordleHelperLogic _wordleHelperLogic
 
 <PageTitle>Wordle Helper</PageTitle>
@@ -72,7 +73,7 @@
         await _wordleHelperLogic.GetWords();
     }
 
-    string DisplaySolution() => masked ? "*****" : _solution.Solution;
+    string DisplaySolution() => masked ? "*****" : _solution.SolutionText;
 
     void ToggleMasked()
     {

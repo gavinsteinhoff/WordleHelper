@@ -1,12 +1,11 @@
-﻿using System.Diagnostics;
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 
-namespace WordleHelper;
+namespace WordleHelper.Core;
 
 public interface IWordleHelperLogic
 {
-    Task GetWords();
+    Task GetWords(string wordList = "dictionaries/wordle.json");
     WordleSolution GetSolutions(WordleHelperInput model);
 }
 
@@ -20,13 +19,13 @@ public class WordleHelperLogic : IWordleHelperLogic
         _http = http;
     }
 
-    public async Task GetWords()
+    public async Task GetWords(string? wordList = "dictionaries/wordle.json")
     {
-        var response = await _http.GetFromJsonAsync<DictionaryData>("dictionaries/wordle.json");
+        var response = await _http.GetFromJsonAsync<List<string>>(wordList);
         if (response is not null)
         {
             var rnd = new Random();
-            var randomized = response.Words.OrderBy(item => rnd.Next());
+            var randomized = response.OrderBy(item => rnd.Next());
             _words = randomized;
         }
     }
@@ -64,12 +63,13 @@ public class WordleHelperLogic : IWordleHelperLogic
         var blockedRegex = new Regex(blockedLettersRegexTemplate, RegexOptions.IgnoreCase);
         potentialMatches = potentialMatches.Where(m => blockedRegex.IsMatch(m));
 
-        var solution = potentialMatches.Take(30).Aggregate((current, i) => current + $"<p>{i}</p>");
+        var solutionText = potentialMatches.Take(30).Aggregate((current, i) => current + $"<p>{i}</p>");
         var count = potentialMatches.Take(30).Count();
 
         return new WordleSolution()
         {
-            Solution = solution,
+            SolutionText = solutionText,
+            Solutions = potentialMatches.Take(30),
             Count = count
         };
     }

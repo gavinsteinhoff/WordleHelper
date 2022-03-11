@@ -13,6 +13,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\WordleHelper.Core\WordleHelper.Core.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <Content Update="wwwroot\dictionaries\wordle.json">
 	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </Content>
