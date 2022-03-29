@@ -20,7 +20,7 @@ namespace WordleHelper.Tests
         {
         }
 
-        private WordleHelperLogic CreateWordleHelperLogic(List<string> input)
+        private static WordleHelperLogic CreateWordleHelperLogic(List<string> input)
         {
             var handlerMock = new Mock<HttpMessageHandler>();
             var response = new HttpResponseMessage
@@ -58,7 +58,8 @@ namespace WordleHelper.Tests
             var input = new List<string>() { "spark", "hello" };
             var logic = CreateWordleHelperLogic(input);
             await logic.GetWords("https://google.com");
-            var model = new WordleHelperInput()            {
+            var model = new WordleHelperInput()
+            {
                 Skeleton = "s----"
             };
             var output = logic.GetSolutions(model);
@@ -71,8 +72,9 @@ namespace WordleHelper.Tests
             var input = new List<string>() { "spark", "hello" };
             var logic = CreateWordleHelperLogic(input);
             await logic.GetWords("https://google.com");
-            var model = new WordleHelperInput()            {
-               BlockedLetters = "h"
+            var model = new WordleHelperInput()
+            {
+                BlockedLetters = "h"
             };
             var output = logic.GetSolutions(model);
             CollectionAssert.AreEquivalent(new List<string>() { "spark" }, output.Solutions.ToList());
