@@ -35,22 +35,21 @@ public class WordleHelperLogic : IWordleHelperLogic
         var foundLetters = string.IsNullOrEmpty(model.KnownLetters) ? string.Empty : model.KnownLetters;
         foundLetters += model.WrongPositionSkeleton.Replace("-", "");
 
-        // Match correct skeleton
-        var matchedRegexTemplate = model.Skeleton.Aggregate(@"\b", (regexString, next) => regexString + (next == '-' ? '.' : next)) + @"\b";
-        var matchedRegex = new Regex(matchedRegexTemplate, RegexOptions.IgnoreCase);
-        var potentialMatches = _words.Where(m => matchedRegex.IsMatch(m));
+        // Filter for found letters
+        var foundLettersRegexTemplate = foundLetters.Aggregate("", (regexString, next) => regexString += $"(?=.*{next}.*)");
 
-        // Filter to found letters
-        var foundLettersRegexTemplate = foundLetters.Aggregate("", (regexString, next) => regexString += $"(?=.*{next}.*)") + @"\w*";
-        var foundRegex = new Regex(foundLettersRegexTemplate, RegexOptions.IgnoreCase);
-        potentialMatches = potentialMatches.Where(m => foundRegex.IsMatch(m));
-
+        // Get Correct Letters
         // Filter out blocked
         // Filter out wrong positions
+        var index = 0;
         var blockedLettersRegexTemplate = model.WrongPositionSkeleton.Aggregate(@"\b", (regexString, next) =>
         {
             var item = "";
-            if (next == '-')
+            if (model.Skeleton[index] != '-')
+            {
+                item = model.Skeleton[index].ToString();
+            }
+            else if (next == '-')
             {
                 item = model.BlockedLetters == string.Empty ? "." : $"[^{model.BlockedLetters}]";
             }
@@ -58,10 +57,11 @@ public class WordleHelperLogic : IWordleHelperLogic
             {
                 item = model.BlockedLetters == string.Empty ? $"[^{next}]" : $"[^{model.BlockedLetters}{next}]";
             }
+            index++;
             return regexString += item;
         }) + @"\b";
-        var blockedRegex = new Regex(blockedLettersRegexTemplate, RegexOptions.IgnoreCase);
-        potentialMatches = potentialMatches.Where(m => blockedRegex.IsMatch(m));
+        var regexTemplate = foundLettersRegexTemplate + blockedLettersRegexTemplate;
+        var potentialMatches = _words.Where(word => Regex.IsMatch(word, regexTemplate, RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(500)));       
 
         var solutionText = potentialMatches.Take(30).Aggregate((current, i) => current + $"<p>{i}</p>");
         var count = potentialMatches.Take(30).Count();
