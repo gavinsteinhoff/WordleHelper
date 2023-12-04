@@ -4,7 +4,6 @@
 <MudSnackbarProvider />
 <MudThemeProvider @ref="@_mudThemeProvider" @bind-IsDarkMode="@_isDarkMode" />
 
-
 <MudLayout>
     <MudAppBar Elevation="0">
         <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Link="https://github.com/gavinsteinhoff/WordleHelper" Target="_blank" />
@@ -19,12 +18,15 @@
 
 @code {
     private bool _isDarkMode = false;
-    private MudThemeProvider _mudThemeProvider;
+    private MudThemeProvider? _mudThemeProvider;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
+            if (_mudThemeProvider is null)
+                return;
+
             _isDarkMode = await _mudThemeProvider.GetSystemPreference();
             StateHasChanged();
         }

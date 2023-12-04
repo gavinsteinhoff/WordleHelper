@@ -36,7 +36,7 @@ public class WordleHelperLogic : IWordleHelperLogic
         foundLetters += model.WrongPositionSkeleton.Replace("-", "");
 
         // Filter for found letters
-        var foundLettersRegexTemplate = foundLetters.Aggregate("", (regexString, next) => regexString += $"(?=.*{next}.*)");
+        var foundLettersRegexTemplate = foundLetters.Aggregate("", (regexString, next) => regexString += $@"(?=\w*{next}\w*)");
 
         // Get Correct Letters
         // Filter out blocked
@@ -60,12 +60,13 @@ public class WordleHelperLogic : IWordleHelperLogic
             index++;
             return regexString += item;
         }) + @"\b";
+
         var regexTemplate = foundLettersRegexTemplate + blockedLettersRegexTemplate;
+        Console.WriteLine(regexTemplate);
         var potentialMatches = _words.Where(word => Regex.IsMatch(word, regexTemplate, RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(500)));       
 
         var solutionText = potentialMatches.Take(30).Aggregate((current, i) => current + $"<p>{i}</p>");
         var count = potentialMatches.Take(30).Count();
-
         return new WordleSolution()
         {
             SolutionText = solutionText,
